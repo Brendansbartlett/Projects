@@ -1,0 +1,52 @@
+#Brendan Bartlett
+
+# Import the Active Directory module
+Import-Module ActiveDirectory
+
+# Check for the existence of the "Finance" OU
+$ouExists = Get-ADOrganizationalUnit -Filter "Name -eq 'Finance'"
+
+if ($ouExists) {
+    Write-Host "The 'Finance' OU already exists. Deleting it..."
+    Remove-ADOrganizationalUnit -Identity "OU=Finance,DC=consultingfirm,DC=com" -Recursive -Confirm:$false
+    Write-Host "The 'Finance' OU was deleted."
+}
+else {
+    Write-Host "The 'Finance' OU does not exist."
+}
+
+# Create the "Finance" OU
+$ADRoot = "DC=consultingfirm,DC=com"
+$OUCanonicalName = "Finance"
+$OUDisplayName = "Finance"
+New-ADOrganizationalUnit -Path $ADRoot -Name $OUCanonicalName -DisplayName $OUDisplayName -ProtectedFromAccidentalDeletion $false
+
+# Import financePersonnel.csv into the "Finance" OU
+$NewADUsers = Import-csv -Path ".\financePersonnel.csv"
+$Path = "OU=Finance,DC=consultingfirm,DC=com"
+
+ForEach ($ADUser in $NewADUsers)
+{
+    $GivenName = $ADUser."First_Name"
+    $Surname = $ADUser."Last_Name"
+    $SamAcct = $ADUser.samAccount
+    $City = $ADUser.City
+    $County = $ADUser.County
+    $Postal = $ADUser.PostalCode
+    $Office = $ADUser.OfficePhone
+    $Mobile = $ADUser.MobilePhone
+   
+    New-ADUser -GivenName $GivenName `
+               -Surname $Surname `
+               -SamAccountName $SamAcct `
+               -City $City `
+               -Country $County `
+               -PostalCode $Postal `
+               -OfficePhone $Office `
+               -MobilePhone $Mobile `
+               -Path $Path
+}
+
+# Generate output file
+Get-ADUser -Filter * -SearchBase "OU=Finance,DC=consultingfirm,DC=com" -Properties DisplayName,PostalCode,OfficePhone,MobilePhone | Out-File -FilePath .\AdResults.txt
+Write-Host "Script execution completed."
