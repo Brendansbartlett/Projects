@@ -1,0 +1,63 @@
+#Brendan Bartlett
+
+try 
+{
+    #Varible to hold user selection
+    $userInput = 0
+
+    while($userInput -ne 5)
+    {
+        #Show menu
+        Write-Host "
+        1. List files within the Requirements1 folder with a .log file extension and redirect to a new file called DailyLog.txt
+        2. List the inside the Requirements1 folder in tabular format, sort in ascending alphabetical order
+        3. List the current CPU and memory usage
+        4. List all the different running processes inside your system
+        5. Exit"
+
+        #Get user input
+        Write-Host "n--> Please choose an option (1-5):"
+        $userInput = Read-Host
+
+        switch($userInput)
+        {
+            1
+            {
+                #List the files that have a .log extension within the Requirement1 folder and output the data DailyLog.txt without overwriting the existing data
+                "TIMESTAMP: " + (Get-Date) | Out-File "DailyLog.txt" -Append
+                Get-ChildItem "$PSScriptRoot" -Filter "*.log" | Out-File "DailyLog.txt" -Append
+            }
+
+            2
+            {
+                #List the files inside the Requirements1 folder in tabular format, sorted in ascending alphabetical order. Direct output to C916contents.txt file
+                Get-ChildItem "$PSScriptRoot" | Format-Table -AutoSize | Out-File "C916contents.txt" 
+            }
+
+            3
+            {
+                #List the current CPU and memory usage
+                $CounterList = "\Processor(_Total)\% Processor Time", "\Memory\Committed Bytes"
+                Get-Counter $CounterList
+            }
+
+            4
+            {
+                #List all the running processes inside the system. Sort by virtual size used least to greatest, disply in grid format
+                Get-Process | Select-Object ID, Name, VM | Sort-Object VM | Out-GridView
+            }
+
+            5
+            {
+                #Exit
+                Exit
+            }
+        }
+    }
+    
+}
+catch [System.OutOfMemoryException]
+{
+    #Apply exception handling
+    Write-Host "n--> Please choose an option (1-5):"
+}
