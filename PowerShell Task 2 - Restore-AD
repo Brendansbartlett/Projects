@@ -1,4 +1,4 @@
-#Brendan Bartlett 010270663
+#Brendan Bartlett - Western Governors University - Cloud Computing
 
 # Import the Active Directory module
 Import-Module ActiveDirectory
