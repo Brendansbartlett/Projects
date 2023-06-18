@@ -1,4 +1,4 @@
-#Brendan Bartlett
+#Brendan Bartlett 010270663
 
 # Import the Active Directory module
 Import-Module ActiveDirectory
