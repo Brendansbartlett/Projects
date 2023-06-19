@@ -1,4 +1,4 @@
-#Brendan Bartlett - Western Governors University - Cloud Computing
+#Brendan Bartlett 010270663
 
 # Import the Active Directory module
 Import-Module ActiveDirectory
@@ -17,35 +17,43 @@ else {
 
 # Create the "Finance" OU
 $ADRoot = "DC=consultingfirm,DC=com"
+$DnsRoot = (Get-ADDomain).DnsRoot
 $OUCanonicalName = "Finance"
 $OUDisplayName = "Finance"
 New-ADOrganizationalUnit -Path $ADRoot -Name $OUCanonicalName -DisplayName $OUDisplayName -ProtectedFromAccidentalDeletion $false
 
 # Import financePersonnel.csv into the "Finance" OU
-$NewADUsers = Import-csv -Path ".\financePersonnel.csv"
+$NewADUsers = Import-Csv -Path ".\financePersonnel.csv"
 $Path = "OU=Finance,DC=consultingfirm,DC=com"
 
 ForEach ($ADUser in $NewADUsers)
 {
-    $GivenName = $ADUser."First_Name"
-    $Surname = $ADUser."Last_Name"
+    $First = $ADUser.First_Name
+    $Last = $ADUser.Last_Name
+    $Name = $First + " " + $Last
     $SamAcct = $ADUser.samAccount
+    $UPN = "$($SamAcct)@$($DnsRoot)"
     $City = $ADUser.City
     $County = $ADUser.County
     $Postal = $ADUser.PostalCode
     $Office = $ADUser.OfficePhone
     $Mobile = $ADUser.MobilePhone
+
    
-    New-ADUser -GivenName $GivenName `
-               -Surname $Surname `
-               -SamAccountName $SamAcct `
-               -City $City `
-               -Country $County `
-               -PostalCode $Postal `
-               -OfficePhone $Office `
-               -MobilePhone $Mobile `
-               -Path $Path
+    New-ADUser  -GivenName $First `
+        -Surname $Last `
+        -Name $Name `
+        -SamAccount $SamAcct `
+        -UserPrincipalName $UPN `
+        -DisplayName $Name `
+        -City $City `
+        -State $County `
+        -PostalCode $Postal `
+        -OfficePhone $Office `
+        -Mobile $Mobile `
+        -Path $Path
 }
+
 
 # Generate output file
 Get-ADUser -Filter * -SearchBase "OU=Finance,DC=consultingfirm,DC=com" -Properties DisplayName,PostalCode,OfficePhone,MobilePhone | Out-File -FilePath .\AdResults.txt
