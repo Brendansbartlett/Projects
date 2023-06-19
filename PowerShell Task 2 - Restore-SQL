@@ -1,1 +1,58 @@
+#Brendan Bartlett 010270663
 
+# Check if the database "ClientDB" exists
+if (Get-Module -Name "SqlServer") {
+    Write-Output "The database already exists. Deleting it..."
+    Remove-Module "SqlServer" -Confirm:$false
+    Write-Output "The database was deleted."
+}
+else {
+    Write-Host "The Database 'ClientDB does not exist."
+}
+
+# Create a new database named "ClientDB"
+Write-Output "Creating the database 'ClientDB'..."
+
+# Set a string variable equal to the name of the SQL instance
+$sqlServerInstanceName = "SRV19-PRIMARY\SQLEXPRESS"
+
+# Create an object reference to the SQL Server
+$sqlServerObject = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $sqlServerInstanceName
+
+# Set a string variable equal to the name of the Database
+$databaseName = "ClientDB"
+
+# Create an object to reference the database
+$databaseObject = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Database- -ArgumentList $sqlServerObject, $databaseName
+
+# Call the Create method on the database object to create it
+$databaseObject.Create()
+Write-Output "The database 'ClientDB' was created."
+
+# Create a new table named "Client_A_Contacts"
+Write-Output "Creating the table 'Client_A_Contacts'..."
+Invoke-Sqlcmd -SqlInstance .\SQLEXPRESS -Database "ClientDB" -Query @"
+CREATE TABLE Client_A_Contacts (
+    Column1 INT,
+    Column2 VARCHAR(50),
+    Column3 VARCHAR(50),
+    Column4 VARCHAR(50),
+    Column5 VARCHAR(50)
+)
+"@
+Write-Output "The table 'Client_A_Contacts' was created."
+
+# Insert data from "NewClientData.csv" into the table
+Write-Output "Inserting data from 'NewClientData.csv'..."
+Import-Csv -Path $PSScriptRoot\NewClientData.csv | ForEach-Object {
+    Invoke-Sqlcmd -SqlInstance .\SQLEXPRESS -Database "ClientDB" -Query @"
+    INSERT INTO Client_A_Contacts (Column1, Column2, Column3, Column4, Column5)
+    VALUES ('$($_.Column1)', '$($_.Column2)', '$($_.Column3)', '$($_.Column4)', '$($_.Column5)')
+"@
+}
+Write-Output "Data from 'NewClientData.csv' was inserted into the table."
+
+# Generate the output file SqlResults.txt
+Invoke-Sqlcmd -SqlInstance .\SQLEXPRESS -Database "ClientDB" -Query "SELECT * FROM dbo.Client_A_Contacts" | Export-Csv -Path ".\SqlResults.txt" -NoTypeInformation
+
+Write-Output "Script execution completed."
